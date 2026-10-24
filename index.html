@@ -194,6 +194,25 @@
     });
   }
 </script>
+<script src="https://www.gstatic.com/firebasejs/10.10.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.10.1/firebase-messaging-compat.js"></script>
+<script>
+  firebase.initializeApp({
+    apiKey: "AIzaSyCqboMByZpmtf1tLZu8CETSPfXVs_PGDzU",
+    authDomain: "mylove-d2976.firebaseapp.com",
+    projectId: "mylove-d2976",
+    storageBucket: "mylove-d2976.firebasestorage.app",
+    messagingSenderId: "450467342367",
+    appId: "1:450467342367:web:cb9fe1997dc367e1fdcd2a"
+  });
+
+  const messaging = firebase.messaging();
+  messaging.requestPermission().then(function() {
+    console.log('Permission granted.');
+  }).catch(function(err) {
+    console.log('Unable to get permission to notify.', err);
+  });
+</script>
 
 </body>
 </html>
