@@ -1,212 +1,199 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام الطلبات والروابط</title>
-    <style>
-        body { font-family: sans-serif; background-color: #f4f6f9; text-align: center; padding: 20px; }
-        .card { background: white; padding: 20px; margin: 10px auto; border-radius: 15px; max-width: 450px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; }
-        input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; }
-        button { background: #e9163; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
-        button:hover { background: #c2185b; }
-        .status-box { margin-top: 20px; padding: 15px; background: #fff0f3; border-radius: 8px; display: none; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام الطلبات والروابط ❤️</title>
+  <style>
+    body { font-family: sans-serif; background-color: #f4f6f9; text-align: center; padding: 20px; }
+    .card { background: white; padding: 20px; border-radius: 15px; max-width: 450px; margin: 20px auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: right; }
+    .center-card { text-align: center; }
+    input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+    button { background: #e91e63; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 16px; cursor: pointer; }
+    button:hover { background: #c2185b; }
+    .status-box { margin-top: 20px; padding: 10px; background: #fff0f3; border-radius: 8px; font-size: 14px; word-break: break-all; }
+  </style>
 
-    <!-- Firebase App (Core) SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <!-- Firebase Realtime Database SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    <!-- Firebase Cloud Messaging SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
+  <!-- Firebase Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
 
-    <!-- شاشة تسجيل الدخول -->
-    <div id="loginScreen" class="card">
-        <h2>تسجيل الدخول لوحة التحكم</h2>
-        <input type="password" id="pinInput" placeholder="أدخل رمز الدخول">
-        <br>
-        <button onclick="checkPin()">دخول</button>
+  <!-- شاشة تسجيل الدخول لاختيار الواجهة -->
+  <div id="loginScreen" class="card center-card">
+    <h2>مرحباً بك في النظام</h2>
+    <p>الرجاء إدخال الرمز السري:</p>
+    <input type="password" id="pinInput" placeholder="أدخل الرمز السري">
+    <br>
+    <button onclick="checkPin()">دخول</button>
+  </div>
+
+  <!-- واجهة بسبس (العميل) -->
+  <div id="babsbsScreen" class="card center-card" style="display:none;">
+    <h2>أهلاً بك يا بسبس ❤️</h2>
+    <p>اكتبي اسم الفيلم أو اللعبة اللي عاوزاها:</p>
+    <input type="text" id="requestInput" placeholder="مثال: فيلم أكشن / لعبة كذا">
+    <br>
+    <button onclick="sendRequest()">إرسال الطلب</button>
+
+    <div id="statusArea" class="status-box" style="display:none;">
+      <strong>الطلب الأخير:</strong> <span id="currentRequestText"></span><br><br>
+      <strong>الحالة:</strong> <span id="statusText">جاري البحث يا بسبس...</span>
     </div>
+    <br>
+    <button onclick="logout()" style="background: #777; font-size: 12px; padding: 5px 10px;">تسجيل خروج</button>
+  </div>
 
-    <!-- واجهة لوحة التحكم -->
-    <div id="adminScreen" class="card" style="display: none;">
-        <h2>لوحة التحكم</h2>
-        <p>الطلبات الواردة من المستخدمين:</p>
-        <div id="requestsList"></div>
-        <br>
-        <button onclick="logout()">تسجيل الخروج</button>
-    </div>
+  <!-- واجهة لوحة التحكم (المالك) -->
+  <div id="adminScreen" class="card" style="display:none; text-align: center;">
+    <h2>لوحة التحكم الخاصة بك 👑</h2>
+    <h3>الطلبات الواردة من بسبس:</h3>
+    <div id="requestsList">جاري تحميل الطلبات...</div>
+    <br>
+    <button onclick="logout()" style="background: #777; font-size: 12px; padding: 5px 10px;">تسجيل خروج</button>
+  </div>
 
-    <!-- واجهة بس بس -->
-    <div id="bsbsScreen" class="card" style="display: none;">
-        <h2>أهلاً بك يا بس بس</h2>
-        <p>اكتب اسم الفيلم أو طلبك هنا:</p>
-        <input type="text" id="requestInput" placeholder="اكتب طلبك هنا...">
-        <br>
-        <button onclick="sendRequest()">إرسال الطلب</button>
-        <div id="statusArea" class="status-box">
-            <p>الطلب السابق: <span id="statusText"></span></p>
-        </div>
-        <br>
-        <button onclick="logout()">تسجيل الخروج</button>
-    </div>
+<script>
+  // إعدادات Firebase
+  const firebaseConfig = {
+    databaseURL: "https://mylove-d2976-default-rtdb.firebaseio.com"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-    <script>
-        // إعدادات Firebase
-        const firebaseConfig = {
-            databaseURL: "https://mylove-d2976-default-rtdb.firebaseio.com",
-            projectId: "mylove-d2976",
-            storageBucket: "mylove-d2976.appspot.com",
-            messagingSenderId: "450467342367",
-            appId: "1:450467342367:web:cb9fe1997dec367e1fdcd2a"
-        };
+  // الأكواد السرية (يمكنك تغييرها كما تشاء)
+  const BABSBS_PIN = "0000"; // رمز دخول صفحة بسبس
+  const ADMIN_PIN = "1234";  // رمز دخول لوحة التحكم الخاصة بك
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const messaging = firebase.messaging();
+  // التحقق من الجلسة السابقة عند فتح الصفحة
+  window.onload = function() {
+    const savedRole = localStorage.getItem("userRole");
+    if (savedRole === "babsbs") {
+      showBabsbsScreen();
+    } else if (savedRole === "admin") {
+      showAdminScreen();
+    }
+  };
 
-        // طلب إذن الإشعارات واستخراج رمز الـ Token
-        Notification.requestPermission().then((permission) => {
-            if (permission === 'granted') {
-                console.log('تم منح إذن الإشعارات.');
-                return messaging.getToken({ vapidKey: 'BEpjxV9IVbfMBZ24qXoI7Ad9V8pJTA4gdWoHreKUodSjQIQaXlKFwVjrCR7v0njqjc6STMin0hFZ_hpPPRc0pc8' });
-            } else {
-                console.log('تم رفض إذن الإشعارات.');
-            }
-        }).then((currentToken) => {
-            if (currentToken) {
-                console.log('FCM Token:', currentToken);
-                // يمكنك حفظ الرمز في قاعدة البيانات هنا لو احتجت توجيه الإشعارات لجهاز معين
-            } else {
-                console.log('لا يوجد رمز إشعارات متاح، اطلب إذن المستخدم.');
-            }
-        }).catch((err) => {
-            console.log('حدث خطأ أثناء الحصول على الرمز ', err);
-        });
+  function checkPin() {
+    const pin = document.getElementById("pinInput").value.trim();
+    if (pin === BABSBS_PIN) {
+      localStorage.setItem("userRole", "babsbs");
+      showBabsbsScreen();
+    } else if (pin === ADMIN_PIN) {
+      localStorage.setItem("userRole", "admin");
+      showAdminScreen();
+    } else {
+      alert("الرمز السري غير صحيح!");
+    }
+  }
 
-        // استقبال الإشعارات في الخلفية أو الواجهة وهي مفتوحة
-        messaging.onMessage((payload) => {
-            console.log('تم استلام إشعار في الواجهة الأمامية: ', payload);
-            alert(payload.notification.title + ": " + payload.notification.body);
-        });
+  function logout() {
+    localStorage.removeItem("userRole");
+    location.reload();
+  }
 
-        const BABSBS_PIN = "0852";
-        const ADMIN_PIN = "1234";
+  // --- وظائف واجهة بسبس ---
+  function showBabsbsScreen() {
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("adminScreen").style.display = "none";
+    document.getElementById("babsbsScreen").style.display = "block";
 
-        function checkPin() {
-            const pin = document.getElementById("pinInput").value.trim();
-            if (pin === BABSBS_PIN) {
-                localStorage.setItem("userRole", "bsbs");
-                showBsbsScreen();
-            } else if (pin === ADMIN_PIN) {
-                localStorage.setItem("userRole", "admin");
-                showAdminScreen();
-            } else {
-                alert("الرمز السري غير صحيح");
-            }
+    let activeRequestId = localStorage.getItem("lastRequestId");
+    if (activeRequestId) {
+      listenToRequest(activeRequestId);
+    }
+  }
+
+  function sendRequest() {
+    const text = document.getElementById("requestInput").value.trim();
+    if (!text) return alert("الرجاء كتابة الطلب أولاً");
+
+    const newRef = db.ref("requests").push();
+    const activeRequestId = newRef.key;
+    localStorage.setItem("lastRequestId", activeRequestId);
+
+    newRef.set({
+      requestText: text,
+      status: "جاري البحث يا بسبس...",
+      timestamp: Date.now()
+    }).then(() => {
+      document.getElementById("requestInput").value = "";
+      listenToRequest(activeRequestId);
+    });
+  }
+
+  function listenToRequest(requestId) {
+    document.getElementById("statusArea").style.display = "block";
+    
+    db.ref("requests/" + requestId).on("value", (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        document.getElementById("currentRequestText").innerText = data.requestText;
+        
+        if (data.status.startsWith("http://") || data.status.startsWith("https://")) {
+          document.getElementById("statusText").innerHTML = `<a href="${data.status}" target="_blank">${data.status}</a>`;
+        } else {
+          document.getElementById("statusText").innerText = data.status;
+        }
+      }
+    });
+  }
+
+  // --- وظائف واجهة لوحة التحكم ---
+  function showAdminScreen() {
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("babsbsScreen").style.display = "none";
+    document.getElementById("adminScreen").style.display = "block";
+
+    db.ref("requests").on("value", (snapshot) => {
+      const container = document.getElementById("requestsList");
+      container.innerHTML = "";
+
+      if (!snapshot.exists()) {
+        container.innerHTML = "<p>لا توجد طلبات حالياً</p>";
+        return;
+      }
+
+      const requests = [];
+      snapshot.forEach((child) => {
+        requests.push({ id: child.key, ...child.val() });
+      });
+
+      requests.reverse(); // من الأحدث للأقدم
+
+      requests.forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "card";
+        
+        let statusDisplay = item.status;
+        if (item.status && (item.status.startsWith("http://") || item.status.startsWith("https://"))) {
+          statusDisplay = `<a href="${item.status}" target="_blank">${item.status}</a>`;
         }
 
-        function logout() {
-            localStorage.removeItem("userRole");
-            location.reload();
-        }
+        card.innerHTML = `
+          <p><strong>الطلب:</strong> ${item.requestText}</p>
+          <p><strong>الحالة:</strong> ${statusDisplay}</p>
+          <input type="text" id="link_${item.id}" placeholder="حط الرابط المباشر هنا">
+          <button onclick="sendLink('${item.id}')">إرسال الرابط</button>
+        `;
+        container.appendChild(card);
+      });
+    });
+  }
 
-        function showBsbsScreen() {
-            document.getElementById("loginScreen").style.display = "none";
-            document.getElementById("adminScreen").style.display = "none";
-            document.getElementById("bsbsScreen").style.display = "block";
-            let activeRequestId = localStorage.getItem("lastRequestId");
-            if (activeRequestId) {
-                listenToRequest(activeRequestId);
-            }
-        }
+  function sendLink(id) {
+    const linkValue = document.getElementById("link_" + id).value.trim();
+    if (!linkValue) return alert("يرجى إدخال الرابط أولاً");
 
-        function showAdminScreen() {
-            document.getElementById("loginScreen").style.display = "none";
-            document.getElementById("bsbsScreen").style.display = "none";
-            document.getElementById("adminScreen").style.display = "block";
-            
-            db.ref("requests/").on("value", (snapshot) => {
-                const container = document.getElementById("requestsList");
-                container.innerHTML = "";
-                snapshot.forEach((childSnapshot) => {
-                    let item = childSnapshot.val();
-                    let itemId = childSnapshot.key;
-                    let statusDisplay = item.status;
-                    if(item.status && item.status.startsWith("http")) {
-                        statusDisplay = `<a href="${item.status}" target="_blank">رابط المتابعة</a>`;
-                    }
-                    
-                    container.innerHTML += `
-                        <div class="card">
-                            <p><strong>الطلب:</strong> ${item.requestText}</p>
-                            <p><strong>الحالة:</strong> ${statusDisplay}</p>
-                            <input type="text" id="link_${itemId}" placeholder="حط الرابط المباشر هنا">
-                            <button onclick="sendLink('${itemId}')">إرسال الرابط بنجاح</button>
-                        </div>
-                    `;
-                });
-            });
-        }
+    db.ref("requests/" + id).update({
+      status: linkValue
+    }).then(() => {
+      alert("تم إرسال الرابط بنجاح!");
+    });
+  }
+</script>
 
-        function sendRequest() {
-            const text = document.getElementById("requestInput").value.trim();
-            if (!text) {
-                alert("يرجى كتابة الطلب أولاً");
-                return;
-            }
-            const newReqRef = db.ref("requests/").push();
-            newReqRef.set({
-                requestText: text,
-                status: "جاري... جاري البحث يا بس بس",
-                timestamp: Date.now()
-            }).then(() => {
-                localStorage.setItem("lastRequestId", newReqRef.key);
-                document.getElementById("statusText").innerText = "جاري... جاري البحث يا بس بس";
-                document.getElementById("statusArea").style.display = "block";
-                listenToRequest(newReqRef.key);
-                alert("تم إرسال الطلب بنجاح!");
-            });
-        }
-
-        function listenToRequest(requestId) {
-            db.ref("requests/" + requestId).on("value", (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    let statusText = data.status;
-                    if (data.status.startsWith("http")) {
-                        statusText = `<a href="${data.status}" target="_blank">اضغط هنا للمشاهدة</a>`;
-                    }
-                    document.getElementById("statusText").innerHTML = statusText;
-                    document.getElementById("statusArea").style.display = "block";
-                }
-            });
-        }
-
-        function sendLink(id) {
-            const linkValue = document.getElementById(`link_${id}`).value.trim();
-            if (!linkValue) {
-                alert("يرجى إدخال الرابط أولاً");
-                return;
-            }
-            db.ref("requests/" + id).update({
-                status: linkValue
-            }).then(() => {
-                alert("تم إرسال الرابط بنجاح!");
-            });
-        }
-
-        window.onload = function() {
-            let role = localStorage.getItem("userRole");
-            if (role === "bsbs") {
-                showBsbsScreen();
-            } else if (role === "admin") {
-                showAdminScreen();
-            }
-        };
-    </script>
 </body>
 </html>
