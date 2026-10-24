@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    .    meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>طلبات بسبس</title>
+    <style>
+        body {
+            font-family: 'Tahoma', sans-serif;
+            background-color: #fce4ec;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            width: 80%;
+        }
+        button {
+            background-color: #e91e63;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #c2185b;
+        }
+        .hidden { display: none; }
+        .request-box {
+            background: #f1f1f1;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- شاشة تسجيل الدخول -->
+        <div id="login-screen">
+            <h2>مرحباً بكِ في موقع الطلبات الخاص</h2>
+            <p>الرجاء إدخال رمز الدخول:</p>
+            <input type="password" id="pin-input" placeholder="أدخل الرمز السرّي" maxlength="4">
+            <br>
+            <button onclick="checkPin()">دخول</button>
+        </div>
+
+        <!-- واجهة بسبس (البحث عن الأفلام والألعاب) -->
+        <div id="bsbs-screen" class="hidden">
+            <h2>أهلاً بكِ يا بسبس ❤️</h2>
+            <p>اكتبي اسم الفيلم أو اللعبة اللي عاوزاها:</p>
+            <input type="text" id="search-input" placeholder="مثال: فيلم أكشن / لعبة كذا">
+            <br>
+            <button onclick="sendRequest()">إرسال الطلب</button>
+            <p id="status-msg" style="color: #e91e63; font-weight: bold;"></p>
+        </div>
+
+        <!-- واجهة المالك (الرد على الطلبات) -->
+        <div id="admin-screen" class="hidden">
+            <h2>لوحة التحكم الخاصة بك 👑</h2>
+            <p>الطلبات الواردة من بسبس:</p>
+            <div id="requests-list">جاري تحميل الطلبات...</div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs وربط الإعدادات الخاصة بك -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js";
+        import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCqboMbyZpmtf1tLZu8cETSPfXVs_PGDzU",
+            authDomain: "mylove-d2976.firebaseapp.com",
+            projectId: "mylove-d2976",
+            storageBucket: "mylove-d2976.firebasestorage.app",
+            messagingSenderId: "450467342367",
+            appId: "1:450467342367:web:cb9fe1997dc367e1fdcd2a",
+            measurementId: "G-5JPEF2PFMY"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getDatabase(app);
+
+        // جعل الدوال متاحة للـ HTML العام
+        window.checkPin = function() {
+            const pin = document.getElementById('pin-input').value;
+            if (pin === '0000') {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('bsbs-screen').classList.remove('hidden');
+            } else if (pin === '0852') {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('admin-screen').classList.remove('hidden');
+                loadAdminRequests();
+            } else {
+                alert('الرمز خطأ يا حب!');
+            }
+        };
+
+        window.sendRequest = function() {
+            const query = document.getElementById('search-input').value;
+            if (!query) {
+                alert('اكتبي اسم الطلب الأول!');
+                return;
+            }
+
+            const requestsRef = ref(db, 'requests');
+            push(requestsRef, {
+                query: query,
+                status: 'pending',
+                timestamp: Date.now()
+            });
+
+            document.getElementById('status-msg').innerText = "جاري البحث يا بسبس...";
+            document.getElementById('search-input').value = '';
+        };
+
+        function loadAdminRequests() {
+            const requestsRef = ref(db, 'requests');
+            onValue(requestsRef, (snapshot) => {
+                const data = snapshot.val();
+                const listDiv = document.getElementById('requests-list');
+                listDiv.innerHTML = '';
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        const req = data[key];
+                        listDiv.innerHTML += `
+                            <div class="request-box">
+                                <p><strong>الطلب:</strong> ${req.query}</p>
+                                <p><strong>الحالة:</strong> ${req.status === 'pending' ? 'جاري البحث يا بسبس...' : req.reply}</p>
+                                ${req.status === 'pending' ? `
+                                    <input type="text" id="reply-${key}" placeholder="حط الرابط المباشر هنا">
+                                    <button onclick="sendReply('${key}')">إرسال الرابط</button>
+                                ` : ''}
+                            </div>
+                        `;
+                    });
+                } else {
+                    listDiv.innerHTML = 'لا توجد طلبات حالياً.';
+                }
+            });
+        }
+
+        window.sendReply = function(key) {
+            const replyText = document.getElementById(`reply-${key}`).value;
+            if (!replyText) {
+                alert('حط الرابط الأول!');
+                return;
+            }
+            const reqRef = ref(db, 'requests/' + key);
+            set(reqRef, {
+                query: document.querySelector(`#reply-${key}`).closest('.request-box').querySelector('p').innerText.replace('الطلب: ', ''),
+                reply: replyText,
+                status: 'done'
+            });
+        };
+    </script>
+</body>
+</html>
