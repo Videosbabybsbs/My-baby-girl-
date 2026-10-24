@@ -4,12 +4,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.10.1/firebase-messaging-com
 
 // تهيئة Firebase في ملف الـ Service Worker باستخدام إعدادات مشروعك
 firebase.initializeApp({
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCqboMbyZpmtf1tLZu8cETSPfXVs_PGDzU",
+  authDomain: "mylove-d2976.firebaseapp.com",
+  projectId: "mylove-d2976",
+  storageBucket: "mylove-d2976.firebasestorage.app",
+  messagingSenderId: "450467342367",
+  appId: "1:450467342367:web:cb9fe1997dc367e1fdcd2a"
 });
 
 // تهيئة خدمة الرسائل
